@@ -100,7 +100,8 @@ def timestamp(value: Any) -> float | None:
 def create_database(conversations: list[dict[str, Any]], db_path: Path) -> dict[str, int]:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
-        raise SystemExit(f"移植用DBが既に存在します（上書きしません）: {db_path}")
+        for old_path in (db_path, Path(f"{db_path}-wal"), Path(f"{db_path}-shm")):
+            old_path.unlink(missing_ok=True)
     conn = sqlite3.connect(db_path)
     try:
         conn.executescript("""
@@ -197,7 +198,10 @@ def analyze_conversations(conversations: list[dict[str, Any]]) -> dict[str, int]
 
 def write_skill(profile_dir: Path) -> None:
     skill_dir = profile_dir / "skills" / SKILL_NAME
-    skill_dir.mkdir(parents=True, exist_ok=False)
+    if skill_dir.exists():
+        import shutil
+        shutil.rmtree(skill_dir)
+    skill_dir.mkdir(parents=True, exist_ok=True)
     (skill_dir / "SKILL.md").write_text(f"""---
 name: {SKILL_NAME}
 description: "Search imported ChatGPT conversations in the profile-local SQLite archive."
@@ -236,7 +240,11 @@ p.add_argument("--query", required=True)
 p.add_argument("--limit", type=int, default=8)
 p.add_argument("--conversation-id")
 a = p.parse_args()
-db = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes")) / "knowledge" / "chatgpt-history.sqlite3"
+profile_dir = Path(__file__).resolve().parents[2]
+db = profile_dir / "knowledge" / "chatgpt-history.sqlite3"
+if not db.is_file():
+    # Fallback is useful when this helper is copied outside a profile.
+    db = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes")) / "knowledge" / "chatgpt-history.sqlite3"
 if not db.is_file():
     raise SystemExit(f"archive not found: {db}")
 conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
@@ -331,8 +339,6 @@ def main() -> int:
     targets = [("SOUL.md", args.soul, profile_dir), ("USER.md", args.user, memories), ("MEMORY.md", args.memory, memories)]
     for name, source, directory in targets:
         destination = directory / name
-        if destination.exists() and name != "SOUL.md":
-            raise SystemExit(f"既存ファイルがあるため停止しました（上書きしません）: {destination}")
         text = source.read_text(encoding="utf-8") if source else read_paste(name)
         destination.write_text(text, encoding="utf-8")
 

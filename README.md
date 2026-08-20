@@ -98,7 +98,7 @@ JSON形式で次の情報を出力します。
 
 画像・音声などテキスト化できないパーツは、本文検索DBには含めません。元のZIPは変更しません。
 
-profile作成時に生成されるデフォルトの`SOUL.md`は、移植時に指定内容で上書きします。既存の`USER.md`、`MEMORY.md`、移植用DB、skillがある場合は、上書きせずに停止します。再移植する場合は、対象profileのバックアップを取ったうえで、既存の移植用ファイルを手動で退避・削除してから再実行してください。
+既存の移植ファイルがある場合も、指定した内容・ZIPの内容で上書きします。対象profileを間違えないよう、`--profile`を確認してから実行してください。
 
 ## 検索の使い方
 
@@ -111,18 +111,15 @@ hermes -p my-profile
 過去のChatGPT会話を参照する質問をすると、`chatgpt-history-search` skillが検索ヘルパーを使う想定です。手動確認する場合は次のようにします。
 
 ```bash
-PROFILE_HOME="$(hermes profile show my-profile | sed -n 's/^Path: *//p')"
-HERMES_HOME="$PROFILE_HOME" \
-python3 "$PROFILE_HOME/skills/chatgpt-history-search/search_history.py" \
+python3 /path/to/profile/skills/chatgpt-history-search/search_history.py \
   --query '検索したい語' --limit 8
 ```
 
-シェルの展開順序の都合で上記が扱いにくい場合は、profileのPathを確認して直接指定します。
+検索ヘルパーは自身の配置場所からprofileディレクトリを特定するため、通常は`HERMES_HOME`の設定は不要です。profile外へコピーしたヘルパーを実行する場合だけ、次のように`HERMES_HOME`を指定できます。
 
 ```bash
-hermes profile show my-profile
-python3 /path/to/profile/skills/chatgpt-history-search/search_history.py \
-  --query '検索したい語'
+HERMES_HOME=/path/to/profile \
+python3 /path/to/search_history.py --query '検索したい語'
 ```
 
 ## 安全性とprofile分離
