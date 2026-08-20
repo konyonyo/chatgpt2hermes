@@ -331,7 +331,7 @@ def main() -> int:
     targets = [("SOUL.md", args.soul, profile_dir), ("USER.md", args.user, memories), ("MEMORY.md", args.memory, memories)]
     for name, source, directory in targets:
         destination = directory / name
-        if destination.exists():
+        if destination.exists() and name != "SOUL.md":
             raise SystemExit(f"既存ファイルがあるため停止しました（上書きしません）: {destination}")
         text = source.read_text(encoding="utf-8") if source else read_paste(name)
         destination.write_text(text, encoding="utf-8")
