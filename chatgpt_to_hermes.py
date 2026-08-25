@@ -39,13 +39,26 @@ def load_conversations(zip_path: Path) -> list[dict[str, Any]]:
     if zip_path.suffix.lower() != ".zip":
         raise SystemExit("入力はChatGPTからエクスポートした .zip を指定してください")
     with zipfile.ZipFile(zip_path) as archive:
-        try:
-            data = json.loads(archive.read("conversations.json"))
-        except KeyError as exc:
-            raise SystemExit("ZIP内に conversations.json がありません") from exc
-    if not isinstance(data, list):
-        raise SystemExit("conversations.json の形式が不正です")
-    return data
+        filenames = [
+            name for name in archive.namelist()
+            if re.fullmatch(r"conversations(?:-\d+)?\.json", name)
+        ]
+        filenames.sort(
+            key=lambda name: (
+                name != "conversations.json",
+                -1 if name == "conversations.json" else int(name[14:-5]),
+            )
+        )
+        if not filenames:
+            raise SystemExit("ZIP内に conversations.json または conversations-000.json 形式のファイルがありません")
+
+        conversations: list[dict[str, Any]] = []
+        for filename in filenames:
+            data = json.loads(archive.read(filename))
+            if not isinstance(data, list):
+                raise SystemExit(f"{filename} の形式が不正です")
+            conversations.extend(data)
+    return conversations
 
 
 def content_text(content: dict[str, Any] | None) -> str:

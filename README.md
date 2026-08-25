@@ -141,7 +141,7 @@ Hermesの新しい会話は従来どおりprofile内の `state.db` に保存さ�
 
 ## 制限
 
-- 現在はChatGPTエクスポートの `conversations.json` を対象にしています。
+- ChatGPTエクスポートの `conversations.json`、または分割された `conversations-000.json` / `conversations-001.json` などを対象にしています。分割ファイルは番号順に読み込みます。
 - 会話の現在選択されている枝 (`current_node`) を時系列順に取り込みます。
 - `reasoning_recap` や内部思考など、通常の本文でないメッセージは取り込みません。
 - ZIP内の添付ファイルそのものは移植しません。
